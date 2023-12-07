@@ -16,30 +16,55 @@ function put_handling_collision(idx, val, arr) {
 }
 
 
-function mapthings_vec(source, dest, map, lenmap,          extra_src, extra_src_start, extra_src_len, src, src_str, dst, range, range_str) {
+function mapthings_vec(source, dest, map, lenmap,          extra_src, extra_src_start, extra_src_len, src, src_str, dst, range, range_str_start, prev_start) {
     PROCINFO["sorted_in"] = "@ind_num_desc"
     for (src_str in source) { # for each <start of range> of thing...
         src = strtonum(src_str)
         dst = -1
+        prev_start = -1
         # printf("    %d/%d",src, source[src])
         for (range_str in map) {
             range = strtonum(range_str)
             if (range <= src) {
                 if (src - range < (lenmap[range])) {  # this mapping range fits
                     dst = src - range + map[range]
-                    if (src + source[src] > range + lenmap[range]) {  # but not for the whole range of <thing>
+                    if (src + source[src] > range + lenmap[range]) {  # but not for the whole range
                         # include another range for next pass
                         extra_src_start = range + lenmap[range]
-                        extra_src_len = put_handling_collision(extra_src_start, src + source[src] - (range + lenmap[range]), extra_src)
+                        extra_src_len = put_handling_collision(extra_src_start, src + source[src] - extra_src_start, extra_src)
                         put_handling_collision(dst, source[src] - extra_src_len, dest)
                     }
                     else put_handling_collision(dst, source[src], dest)
-                    break
                 }
-                else break  # no other range will fit
+                else {
+                    # Our range is a hole, starting in range + lenmap[range]
+                    # and ending in prev_start
+                    # print "hole in " range + lenmap[range] "-" prev_start
+                    dst = src
+                    if (prev_start == -1) put_handling_collision(dst, source[src], dest)  # beyond last mapping
+                    else {
+                        if (src + source[src] > prev_start) { # the hole doesn't fit the range
+                            extra_src_start = prev_start
+                            extra_src_len = put_handling_collision(extra_src_start, src + source[src] - extra_src_start, extra_src)
+                            put_handling_collision(dst, source[src] - extra_src_len, dest)
+                        }
+                        else put_handling_collision(dst, source[src], dest)
+                    }
+                }
+                break
             }
+            prev_start = range
         }
-        if (dst == -1) put_handling_collision(src, source[src], dest)
+        if (dst == -1) {
+            # Our range is a hole below last mapping, from 0 to prev_start
+            # print "hole in 0-" prev_start 
+            if (src + source[src] > prev_start) {
+                extra_src_start = prev_start
+                extra_src_len = put_handling_collision(extra_src_start, src + source[src] - extra_src_start, extra_src)
+                put_handling_collision(src, source[src] - extra_src_len, dest)
+            }
+            else put_handling_collision(src, source[src], dest)
+        }
     }
     if (length(extra_src) > 0) {
         # print "..."
@@ -78,56 +103,6 @@ function findloc_vec(seed, location,          soil, fertilizer, water, light, te
 }
 
 END {
-
-    # pluck the holes in the maps!
-    PROCINFO["sorted_in"] = "@ind_num_desc"
-    delete new_entries
-    for (section in map) {
-        if (length(section) < 2)
-            continue
-        for (start in map[section]) {
-            max_block_start = strtonum(start)
-            break
-        }
-        tracker = 0
-        while (tracker < (max_block_start + maplen[section][max_block_start])) {
-            mapped = 0
-            prev_start = -1
-            for (bl_start_str in map[section]) {
-                bl_start = strtonum(bl_start_str)
-                bl_len = strtonum(maplen[section][bl_start])
-                if (bl_start <= tracker) {
-                    if (tracker - bl_start < bl_len) {
-                        tracker = bl_start + bl_len
-                    }
-                    else {
-                        new_entries[section][tracker] = prev_start - tracker
-                        tracker = prev_start
-                    }
-                    mapped = 1
-                    break
-                }
-                prev_start = bl_start
-            }
-            if (! mapped) {
-                new_entries[section][tracker] = prev_start - tracker
-                tracker = prev_start
-            }
-        }
-    }
-    for (section in new_entries) {
-        # print length(new_entries[section]) " new entries in " section
-        for (entry in new_entries[section]) {
-            map[section][entry] = strtonum(entry)
-            maplen[section][entry] = new_entries[entry]
-        }
-        # print "section " section " has " length(map[section]) " rules."
-    }
-
-    # for (s in seed_range) {
-    #     print "seed: " s "/" seed_range[s]
-    # }
-
     findloc_vec(seeds, final_loc)
 
     PROCINFO["sorted_in"] = "@ind_num_asc"

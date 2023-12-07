@@ -33,7 +33,7 @@ for k in maps:
     logging.debug(f"{k} has {len(m)} rules.")
     m.sort(reverse=True, key=lambda x: x[0])
 
-    # pluck holes! (include identity mappings in missing ranges)
+    # plug holes! (include identity mappings in missing ranges)
     new_entries = []
     tracker = 0
     while (tracker < m[0][0] + m[0][1]):
@@ -120,10 +120,10 @@ def min_loc(seed_list):
 
 
 pt1_seeds = list(map(lambda x: {"seed": x, "range": 1}, pt1_seeds))
-print(f"Part 1: Closest location is {min_loc(pt1_seeds)}")
+print(f"Part 1: The closest location is {min_loc(pt1_seeds)}")
 dbgstr = "Seeds: \n"
 for s in seeds:
     dbgstr += f"{s['seed']}/{s['range']}\n"
 logging.debug(dbgstr)
-print(f"Part 2: Closest location is {min_loc(seeds)}")
+print(f"Part 2: The closest location is {min_loc(seeds)}")
 
