@@ -19,8 +19,8 @@ def ways_to_win(t, d):
     right_edge = int(round(h_max + interval))
     right_edge = right_edge if wins(right_edge, t, d) else right_edge - 1
     wtw = right_edge - left_edge + 1
-    print(f"For {t}ms, {d}mm, best is h={h_max}ms.")
-    print(f"Interval to win is [{h_max - interval}, {h_max + interval}] = {wtw} ways.")
+    # print(f"For {t}ms, {d}mm, best is h={h_max}ms.")
+    # print(f"Interval to win is [{h_max - interval}, {h_max + interval}] = {wtw} ways.")
     return wtw
 
 
